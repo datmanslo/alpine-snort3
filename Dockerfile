@@ -85,8 +85,7 @@ RUN ./configure_cmake.sh \
 
 
 WORKDIR $BUILD_DIR/snort3/build
-RUN make VERBOSE=1
-RUN make check && \
+RUN make VERBOSE=1 && \
     make install
 
 #
@@ -101,10 +100,6 @@ WORKDIR ${PREFIX_DIR}
 RUN echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >>/etc/apk/repositories
 
 # Prep APK for installing packages
-RUN apk update
-RUN apk upgrade
-
-# RUNTIME DEPENDENCIES:
 RUN apk add --no-cache  \
     flatbuffers@testing \
     libdnet \
