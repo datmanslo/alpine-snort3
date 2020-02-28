@@ -1,0 +1,10 @@
+language: minimal
+
+services:
+  - docker
+
+install:
+  - docker build -t datmanslo/alpine-snort3 - < Dockerfile
+
+script:
+  - docker run --rm --name alpine-snort3 datmanslo/alpine-snort3 snort --version || travis_terminate 1
