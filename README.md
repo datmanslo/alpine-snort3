@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/datmanslo/alpine-snort3.svg?branch=master)](https://travis-ci.org/datmanslo/alpine-snort3)
+[![Build Status](https://travis-ci.com/datmanslo/alpine-snort3.svg?branch=master)](https://travis-ci.com/datmanslo/alpine-snort3)
 # alpine-snort3
 
 <p align="center">
