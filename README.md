@@ -9,10 +9,10 @@
   </a>
 </p>
 
-[![Docker Stars](https://img.shields.io/docker/stars/satchm0h/alpine-snort3.svg?style=flat-square)](https://hub.docker.com/r/satchm0h/alpine-snort3/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/satchm0h/alpine-snort3.svg?style=flat-square)](https://hub.docker.com/r/satchm0h/alpine-snort3/)
+[![Docker Stars](https://img.shields.io/docker/stars/datmanslo/alpine-snort3.svg?style=flat-square)](https://hub.docker.com/r/datmanslo/alpine-snort3/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/datmanslo/alpine-snort3.svg?style=flat-square)](https://hub.docker.com/r/datmanslo/alpine-snort3/)
 Image Download Size:
-[![](https://images.microbadger.com/badges/image/satchm0h/alpine-snort3.svg)](http://microbadger.com/images/satchm0h/alpine-snort3 'Get your own image badge on microbadger.com')
+[![](https://img.shields.io/docker/image-size/datmanslo/alpine-snort3/latest)](https://hub.docker.com/r/datmanslo/alpine-snort3/)
 
 ## Alpine Linux Snort 3 Runtime
 
