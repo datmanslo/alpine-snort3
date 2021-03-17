@@ -7,7 +7,7 @@
 #  `docker build --build-arg BASE=alpine:3.11--build-arg SNORT_TAG=3.0.0-268 --build-arg DAQ_TAG=v3.0.0-alpha3 -t snort3-alpine:3.0.0-268`
 #
 
-ARG BASE=alpine:latest
+ARG BASE=alpine:3.13.2
 
 FROM $BASE as builder
 
@@ -17,12 +17,14 @@ ARG DAQ_TAG=master
 ENV PREFIX_DIR=/usr/local
 ENV BUILD_DIR=/tmp
 
-# Update APK adding the @testing repo for hwloc (as of Alpine v3.7)
-RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+# Install buildtime packages
+RUN echo '@community https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
     apk add --no-cache \
     autoconf \
     automake \
     linux-headers \
+    lcov@testing \
     wget \
     build-base \
     git \
@@ -32,7 +34,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repo
     cppcheck \
     cpputest \
     flatbuffers-dev \
-    hwloc-dev \
+    hwloc-dev@community \
     libdnet-dev \
     libpcap-dev \
     libtirpc-dev \
@@ -46,19 +48,17 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repo
     libuuid \
     xz-dev
 
-# BUILD Daq on alpine:
-# Note that this is the old DAQ and will eventually be replaced w/ DAQ-NG
+# BUILD Daq
 
 WORKDIR $BUILD_DIR
 RUN git clone -b ${DAQ_TAG} --depth 1 https://github.com/snort3/libdaq.git
-WORKDIR $BUILD_DIR/libdaq
 
-# BUILD daq
+WORKDIR $BUILD_DIR/libdaq
 RUN ./bootstrap && \
     ./configure --prefix=${PREFIX_DIR} && \
     make -j$(nproc) install
 
-# BUILD Snort on alpine
+# BUILD Snort
 WORKDIR $BUILD_DIR
 RUN git clone  -b ${SNORT_TAG} --depth 1 https://github.com/snort3/snort3.git
 
@@ -83,13 +83,13 @@ FROM $BASE
 ENV PREFIX_DIR=/usr/local
 WORKDIR ${PREFIX_DIR}
 
-# Update APK adding the @testing repo for hwloc (as of Alpine v3.7)
-RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
+# Install runtime packags
+RUN echo '@community https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
 
 # Prep APK for installing packages
 RUN apk add --no-cache  \
     flatbuffers \
-    hwloc \
+    hwloc@community \
     libdnet \
     luajit \
     libressl \
