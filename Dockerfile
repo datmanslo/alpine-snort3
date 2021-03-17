@@ -7,7 +7,7 @@
 #  `docker build --build-arg BASE=alpine:3.11--build-arg SNORT_TAG=3.0.0-268 --build-arg DAQ_TAG=v3.0.0-alpha3 -t snort3-alpine:3.0.0-268`
 #
 
-ARG BASE=alpine:3.11.3
+ARG BASE=alpine:latest
 
 FROM $BASE as builder
 
@@ -18,7 +18,7 @@ ENV PREFIX_DIR=/usr/local
 ENV BUILD_DIR=/tmp
 
 # Update APK adding the @testing repo for hwloc (as of Alpine v3.7)
-RUN echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >>/etc/apk/repositories && \
+RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
     apk add --no-cache \
     autoconf \
     automake \
@@ -29,11 +29,10 @@ RUN echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >>/etc/apk/rep
     cmake \
     bison \
     flex \
-    lcov@testing \
     cppcheck \
     cpputest \
-    # Libraries
-    flatbuffers-dev@testing \
+    flatbuffers-dev \
+    hwloc-dev \
     libdnet-dev \
     libpcap-dev \
     libtirpc-dev \
@@ -47,17 +46,6 @@ RUN echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >>/etc/apk/rep
     libuuid \
     xz-dev
 
-# The Alpine hwloc on testing is not reliable from a build perspective.
-# So, lets just build it ourselves.
-#
-WORKDIR $BUILD_DIR
-RUN wget https://download.open-mpi.org/release/hwloc/v2.0/hwloc-2.0.3.tar.gz &&\
-    tar zxvf hwloc-2.0.3.tar.gz
-WORKDIR $BUILD_DIR/hwloc-2.0.3
-RUN ./configure --prefix=${PREFIX_DIR} && \
-    make && \
-    make install
-
 # BUILD Daq on alpine:
 # Note that this is the old DAQ and will eventually be replaced w/ DAQ-NG
 
@@ -68,40 +56,40 @@ WORKDIR $BUILD_DIR/libdaq
 # BUILD daq
 RUN ./bootstrap && \
     ./configure --prefix=${PREFIX_DIR} && \
-    make && \
-    make install
+    make -j$(nproc) install
 
-ARG SNORT_TAG=master
-ARG DAQ_TAG=master
 # BUILD Snort on alpine
 WORKDIR $BUILD_DIR
 RUN git clone  -b ${SNORT_TAG} --depth 1 https://github.com/snort3/snort3.git
 
 WORKDIR $BUILD_DIR/snort3
-RUN ./configure_cmake.sh \
-    --prefix=${PREFIX_DIR} \
-    --enable-unit-tests \
-    --disable-docs
-
+RUN CXX_FLAGS="-fno-rtti O3" ./configure_cmake.sh \
+   --prefix=${PREFIX_DIR} \
+   --build-type=MinSizeRel \
+   --disable-gdb \
+   --enable-tsc-clock \
+   --disable-static-daq \
+   --disable-docs \
+   --enable-large-pcap
 
 WORKDIR $BUILD_DIR/snort3/build
-RUN make VERBOSE=1 && \
-    make install
+RUN make VERBOSE=1 -j$(nproc) install
 
 #
 # RUNTIME CONTAINER
 #
 FROM $BASE
 
-ENV PREFIX_DIR=/usr/local/
+ENV PREFIX_DIR=/usr/local
 WORKDIR ${PREFIX_DIR}
 
 # Update APK adding the @testing repo for hwloc (as of Alpine v3.7)
-RUN echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >>/etc/apk/repositories
+RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
 
 # Prep APK for installing packages
 RUN apk add --no-cache  \
-    flatbuffers@testing \
+    flatbuffers \
+    hwloc \
     libdnet \
     luajit \
     libressl \
