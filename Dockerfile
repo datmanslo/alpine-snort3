@@ -7,7 +7,7 @@
 #  `docker build --build-arg BASE=alpine:3.11--build-arg SNORT_TAG=3.0.0-268 --build-arg DAQ_TAG=v3.0.0-alpha3 -t snort3-alpine:3.0.0-268`
 #
 
-ARG BASE=alpine:3.13.2
+ARG BASE=alpine:3.22
 
 FROM $BASE as builder
 
@@ -18,35 +18,35 @@ ENV PREFIX_DIR=/usr/local
 ENV BUILD_DIR=/tmp
 
 # Install buildtime packages
-RUN echo '@community https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
-    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
-    apk add --no-cache \
+RUN apk add --no-cache \
     autoconf \
     automake \
     linux-headers \
-    lcov@testing \
     wget \
     build-base \
     git \
     cmake \
     bison \
     flex \
+    flex-dev \
     cppcheck \
     cpputest \
     flatbuffers-dev \
-    hwloc-dev@community \
+    hwloc-dev \
     libdnet-dev \
     libpcap-dev \
     libtirpc-dev \
     libmnl-dev \
     luajit-dev \
-    libressl-dev \
+    openssl-dev \
     libtool \
     libnetfilter_queue-dev \
     zlib-dev \
-    pcre-dev \
+    pcre2-dev \
     libuuid \
-    xz-dev
+    xz-dev \
+    vectorscan-dev \
+    jemalloc-dev
 
 # BUILD Daq
 
@@ -70,7 +70,8 @@ RUN CXX_FLAGS="-fno-rtti O3" ./configure_cmake.sh \
    --enable-tsc-clock \
    --disable-static-daq \
    --disable-docs \
-   --enable-large-pcap
+   --enable-large-pcap \
+   --enable-jemalloc
 
 WORKDIR $BUILD_DIR/snort3/build
 RUN make VERBOSE=1 -j$(nproc) install
@@ -83,31 +84,29 @@ FROM $BASE
 ENV PREFIX_DIR=/usr/local
 WORKDIR ${PREFIX_DIR}
 
-# Install runtime packags
-RUN echo '@community https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
-
-# Prep APK for installing packages
-RUN apk add --no-cache  \
+# Install runtime packages
+RUN apk add --no-cache \
     flatbuffers \
-    hwloc@community \
+    hwloc \
     libdnet \
     luajit \
-    libressl \
+    openssl \
     libpcap \
     libmnl \
     libnetfilter_queue \
-    pcre \
+    pcre2 \
     libtirpc \
     musl \
     libstdc++ \
     libuuid \
     zlib \
-    xz
+    xz \
+    vectorscan \
+    jemalloc
 
 # Copy the build artifacts from the build container to the runtime file system
 COPY --from=builder ${PREFIX_DIR}/etc/ ${PREFIX_DIR}/etc/
 COPY --from=builder ${PREFIX_DIR}/lib/ ${PREFIX_DIR}/lib/
-COPY --from=builder ${PREFIX_DIR}/lib64/ ${PREFIX_DIR}/lib64/
 COPY --from=builder ${PREFIX_DIR}/bin/ ${PREFIX_DIR}/bin/
 
 WORKDIR /
