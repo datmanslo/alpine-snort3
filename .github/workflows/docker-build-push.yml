@@ -1,0 +1,72 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: snort3-alpine:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract Snort version
+        id: get_version
+        run: |
+          # Run snort -V and extract version number
+          VERSION_OUTPUT=$(docker run --rm snort3-alpine:latest snort -V)
+          echo "Full output:"
+          echo "$VERSION_OUTPUT"
+
+          # Extract version (e.g., 3.9.6.0) from "Version 3.9.6.0" line
+          VERSION=$(echo "$VERSION_OUTPUT" | grep -oP 'Version \K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not extract version"
+            exit 1
+          fi
+
+          echo "Extracted version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Tag and push Docker image
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+
+          # Tag with version
+          docker tag snort3-alpine:latest datmanslo/alpine-snort3:${VERSION}
+          docker tag snort3-alpine:latest datmanslo/alpine-snort3:latest
+
+          # Push both tags
+          docker push datmanslo/alpine-snort3:${VERSION}
+          docker push datmanslo/alpine-snort3:latest
+
+          echo "Successfully pushed datmanslo/alpine-snort3:${VERSION}"
+          echo "Successfully pushed datmanslo/alpine-snort3:latest"
+
+      - name: Verify image on Docker Hub
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          echo "Image pushed: datmanslo/alpine-snort3:${VERSION}"
+          echo "Image pushed: datmanslo/alpine-snort3:latest"
