@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/datmanslo/alpine-snort3.svg?branch=master)](https://travis-ci.com/datmanslo/alpine-snort3)
+[![Build Status](https://github.com/datmanslo/alpine-snort3/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/datmanslo/alpine-snort3/actions)
 # alpine-snort3
 
 <p align="center">
